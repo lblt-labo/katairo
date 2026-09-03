@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -341,6 +342,23 @@
   .manner-item{ display:flex; gap:0.6rem; align-items:flex-start; background: var(--surface-alt); padding:0.7rem; border-radius:14px; }
   .manner-item .em{ font-size:1.3rem; line-height:1; flex-shrink:0; }
   .manner-item p{ margin:0; font-size:0.85rem; line-height:1.5; }
+  .step-num{
+    width:28px; height:28px; border-radius:50%; background: var(--maru); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800;
+    font-family: var(--font-display); font-size:0.85rem; flex-shrink:0;
+  }
+
+  .install-banner{
+    position: fixed; bottom: 0.7rem; left:50%; transform: translateX(-50%);
+    width: calc(100% - 1.4rem); max-width: 560px;
+    background: var(--surface); border:1.5px solid var(--line); border-radius: 16px;
+    padding: 0.75rem 0.8rem; padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+    z-index: 70; display:flex; align-items:center; gap:0.6rem;
+  }
+  .install-icon{ font-size:1.4rem; flex-shrink:0; }
+  .install-banner .txt{ flex:1; font-size:0.76rem; line-height:1.4; color: var(--ink); }
+  .install-banner .actions{ display:flex; align-items:center; gap:0.4rem; flex-shrink:0; }
 
   /* ---- profile management ---- */
   .profile-manage-list{ display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.7rem; }
@@ -401,6 +419,41 @@
   .step-back{ background:none; border:none; color: var(--ink-soft); font-weight:700; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; gap:0.2rem; min-height:40px; }
 
   .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  /* ---- calendar collection ---- */
+  .calendar-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:0.7rem; }
+  .calendar-month-label{ font-family: var(--font-display); font-weight:800; font-size:1rem; }
+  .calendar-weekday-row{ display:grid; grid-template-columns: repeat(7,1fr); text-align:center; font-size:0.68rem; font-weight:700; color: var(--ink-soft); margin-bottom:0.35rem; }
+  .calendar-grid{ display:grid; grid-template-columns: repeat(7,1fr); gap:0.3rem; margin-bottom:0.9rem; }
+  .calendar-cell{
+    position:relative; aspect-ratio:1/1; min-height:40px; border-radius:10px;
+    border:1.5px solid var(--line); background: var(--surface-alt); overflow:hidden; padding:0; cursor:default;
+  }
+  .calendar-cell.empty{ border:none; background:transparent; }
+  .calendar-cell.has-card{ cursor:pointer; border-color: var(--maru); }
+  .calendar-cell.today{ box-shadow: 0 0 0 2px var(--maru) inset; }
+  .calendar-cell:disabled{ cursor:default; }
+  .calendar-daynum{
+    position:absolute; top:2px; left:4px; font-size:0.6rem; font-weight:800; color: var(--ink-soft); z-index:2;
+  }
+  .calendar-cell.has-card .calendar-daynum{ color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.55); }
+  .calendar-cell img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .calendar-badge{
+    position:absolute; bottom:2px; right:2px; background: rgba(0,0,0,0.55); color:#fff;
+    font-size:0.55rem; font-weight:800; padding:0 4px; border-radius:6px; z-index:2;
+  }
+
+  /* ---- install banner ---- */
+  .install-banner{
+    display:flex; align-items:center; gap:0.55rem;
+    background: var(--surface); border:1.5px solid var(--line); border-radius:16px;
+    padding: 0.6rem 0.7rem; margin: 0.7rem 0.85rem 0;
+  }
+  .install-icon{ font-size:1.4rem; flex-shrink:0; }
+  .install-text{ flex:1; min-width:0; }
+  .install-text p{ margin:0; font-size:0.76rem; line-height:1.4; color: var(--ink); }
+  .install-btn{ min-height:40px; padding:0 0.9rem; font-size:0.8rem; flex-shrink:0; }
+  .install-close{ min-width:36px; min-height:36px; flex-shrink:0; }
 
   /* ---- landscape / short-viewport responsiveness ---- */
   @media (orientation: landscape) and (min-width: 560px){
@@ -619,6 +672,13 @@ const SOS_CATEGORIES = [
 function keyProfileCounts(p){ return `katairo_counts_${p}`; }
 function keyProfileGallery(p){ return `katairo_gallery_${p}`; }
 const emptyCounts = () => ({ maru:0, sankaku:0, shikaku:0, aachi:0, hoshi:0, hishigata:0 });
+
+const WEEKDAYS_JA = ['日','月','火','水','木','金','土'];
+function pad2(n){ return n < 10 ? '0'+n : ''+n; }
+function dateKeyFromTs(ts){
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+}
 
 function hexToRgba(hex, alpha){
   const h = hex.replace('#','');
@@ -843,6 +903,39 @@ function MannerDialog({ onAgree }){
 }
 
 /* ============================================================
+   HELP MODAL (あそびかた)
+   ============================================================ */
+function HelpModal({ onClose }){
+  const steps = [
+    'じぶんの まわりを よく みてみよう！',
+    'みつけた「かたち」を どんどん タップしよう！',
+    '「カードをつくる」を タップして カードに しよう！',
+    'カラーパレットで 「いろ」を ちょうせい しよう！',
+    'コレクションに ほぞん しよう！',
+  ];
+  const circled = ['①','②','③','④','⑤'];
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="modal-sheet">
+        <div className="modal-head">
+          <h2 id="help-title" className="modal-title">❓ あそびかた</h2>
+          <button className="icon-btn" aria-label="とじる" onClick={onClose}>✕</button>
+        </div>
+        <div className="manner-list">
+          {steps.map((s, idx) => (
+            <div className="manner-item" key={idx}>
+              <span className="em" aria-hidden="true">{circled[idx]}</span>
+              <p>{s}</p>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-primary" style={{width:'100%'}} onClick={onClose}>わかった！</button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    PROFILE MANAGER (inside settings)
    ============================================================ */
 function ProfileManager({ profiles, currentProfile, onAdd, onRename, onDelete }){
@@ -969,7 +1062,7 @@ function SettingsSheet({ tone, setTone, timerMin, setTimerMin, profiles, current
 /* ============================================================
    ART / CARD MODAL
    ============================================================ */
-function ArtModal({ counts, profile, onClose, onSaveToGallery }){
+function ArtModal({ counts, profile, onClose, onSaveToGallery, onReset }){
   const canvasRef = useRef(null);
   const [paletteKey, setPaletteKey] = useState('pop');
   const [customHex, setCustomHex] = useState('#1C7C8C');
@@ -1131,6 +1224,14 @@ function ArtModal({ counts, profile, onClose, onSaveToGallery }){
         </div>
 
         {shareMsg && <p style={{fontSize:'0.78rem', color:'var(--maru-dark)', fontWeight:700, textAlign:'center', marginTop:'0.7rem'}}>{shareMsg}</p>}
+
+        <button
+          className="btn btn-secondary"
+          style={{width:'100%', marginTop:'0.8rem'}}
+          onClick={()=>{ onReset(); onClose(); }}
+        >
+          🆕 あたらしいカードをつくる
+        </button>
       </div>
     </div>
   );
@@ -1140,7 +1241,45 @@ function ArtModal({ counts, profile, onClose, onSaveToGallery }){
    GALLERY MODAL
    ============================================================ */
 function GalleryModal({ gallery, profile, onClose, onDelete }){
+  const [cursor, setCursor] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
+  const [selectedDay, setSelectedDay] = useState(null);
   const [viewing, setViewing] = useState(null);
+
+  const byDay = useMemo(() => {
+    const map = {};
+    gallery.forEach(item => {
+      const key = dateKeyFromTs(item.createdAt);
+      if(!map[key]) map[key] = [];
+      map[key].push(item);
+    });
+    Object.keys(map).forEach(k => map[k].sort((a,b) => b.createdAt - a.createdAt));
+    return map;
+  }, [gallery]);
+
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayKey = dateKeyFromTs(Date.now());
+
+  const cells = [];
+  for(let i=0;i<firstDow;i++) cells.push(null);
+  for(let day=1; day<=daysInMonth; day++){
+    const key = `${year}-${pad2(month+1)}-${pad2(day)}`;
+    cells.push({ day, key, items: byDay[key] || [] });
+  }
+
+  function prevMonth(){ setCursor(new Date(year, month-1, 1)); }
+  function nextMonth(){ setCursor(new Date(year, month+1, 1)); }
+
+  function openDay(cell){
+    if(!cell || cell.items.length === 0) return;
+    if(cell.items.length === 1){ setViewing(cell.items[0]); }
+    else { setSelectedDay(cell.key); }
+  }
+
+  const dayItems = selectedDay ? (byDay[selectedDay] || []) : [];
+
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gallery-title" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
       <div className="modal-sheet">
@@ -1149,23 +1288,56 @@ function GalleryModal({ gallery, profile, onClose, onDelete }){
           <button className="icon-btn" aria-label="とじる" onClick={onClose}>✕</button>
         </div>
 
-        {gallery.length === 0 ? (
-          <div className="gallery-empty">まだ カードが ありません。<br/>「カードを 作る」から はじめてみよう🎨</div>
-        ) : viewing ? (
+        {viewing ? (
           <div>
             <img src={viewing.dataUrl} alt="保存したカード" style={{width:'100%', borderRadius:'16px', marginBottom:'0.8rem'}} />
             <div className="btn-row">
-              <button className="btn btn-secondary" onClick={()=>setViewing(null)}>← いちらんに もどる</button>
+              <button className="btn btn-secondary" onClick={()=>setViewing(null)}>← もどる</button>
               <button className="btn btn-secondary" style={{color:'var(--sos-dark)'}} onClick={()=>{ onDelete(viewing.id); setViewing(null); }}>🗑 さくじょ</button>
             </div>
           </div>
+        ) : selectedDay ? (
+          <div>
+            <button className="step-back" onClick={()=>setSelectedDay(null)}>← カレンダーに もどる</button>
+            <p style={{fontWeight:800, margin:'0.4rem 0 0.7rem'}}>{selectedDay} の カード</p>
+            <div className="gallery-grid">
+              {dayItems.map(item => (
+                <button key={item.id} className="gallery-item" onClick={()=>setViewing(item)} aria-label="カードをみる">
+                  <img src={item.dataUrl} alt="保存したカード" />
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
-          <div className="gallery-grid">
-            {gallery.slice().reverse().map(item => (
-              <button key={item.id} className="gallery-item" onClick={()=>setViewing(item)} aria-label="カードをみる">
-                <img src={item.dataUrl} alt="保存したカード" />
-              </button>
-            ))}
+          <div>
+            <div className="calendar-header">
+              <button className="icon-btn" aria-label="まえの月" onClick={prevMonth}>◀</button>
+              <span className="calendar-month-label">{year}年 {month+1}月</span>
+              <button className="icon-btn" aria-label="つぎの月" onClick={nextMonth}>▶</button>
+            </div>
+            <div className="calendar-weekday-row">
+              {WEEKDAYS_JA.map(w => (<span key={w}>{w}</span>))}
+            </div>
+            <div className="calendar-grid">
+              {cells.map((cell, idx) => cell ? (
+                <button
+                  key={cell.key}
+                  className={`calendar-cell ${cell.items.length ? 'has-card':''} ${cell.key===todayKey ? 'today':''}`}
+                  onClick={()=>openDay(cell)}
+                  disabled={cell.items.length===0}
+                  aria-label={`${cell.day}日${cell.items.length ? '、カードあり':''}`}
+                >
+                  <span className="calendar-daynum">{cell.day}</span>
+                  {cell.items[0] && <img src={cell.items[0].dataUrl} alt="" aria-hidden="true" />}
+                  {cell.items.length>1 && <span className="calendar-badge">+{cell.items.length-1}</span>}
+                </button>
+              ) : (
+                <span key={'empty-'+idx} className="calendar-cell empty" aria-hidden="true"></span>
+              ))}
+            </div>
+            {gallery.length === 0 && (
+              <div className="gallery-empty">まだ カードが ありません。<br/>「カードを 作る」から はじめてみよう🎨</div>
+            )}
           </div>
         )}
       </div>
@@ -1320,6 +1492,73 @@ function FaceUpToast({ show, onClose }){
 }
 
 /* ============================================================
+   PWA INSTALL BANNER
+   ============================================================ */
+function useInstallPrompt(){
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    try{
+      const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+      setIsStandalone(!!standalone);
+    }catch(e){}
+    try{
+      const ua = window.navigator.userAgent || '';
+      const iOSDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      setIsIOS(iOSDevice);
+    }catch(e){}
+
+    function handler(e){
+      try{ e.preventDefault(); }catch(err){}
+      setDeferredPrompt(e);
+    }
+    try{ window.addEventListener('beforeinstallprompt', handler); }catch(e){}
+    return () => { try{ window.removeEventListener('beforeinstallprompt', handler); }catch(e){} };
+  }, []);
+
+  return { deferredPrompt, setDeferredPrompt, isStandalone, isIOS };
+}
+
+function InstallBanner(){
+  const { deferredPrompt, setDeferredPrompt, isStandalone, isIOS } = useInstallPrompt();
+  const [dismissed, setDismissed] = useState(() => safeStorage.get('katairo_pwa_dismissed', false));
+
+  const showAndroid = !!deferredPrompt;
+  const showIOS = isIOS && !deferredPrompt;
+
+  if(isStandalone || dismissed || (!showAndroid && !showIOS)) return null;
+
+  function dismiss(){
+    safeStorage.set('katairo_pwa_dismissed', true);
+    setDismissed(true);
+  }
+
+  async function handleInstall(){
+    if(!deferredPrompt) return;
+    try{
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+    }catch(e){}
+    setDeferredPrompt(null);
+    dismiss();
+  }
+
+  return (
+    <div className="install-banner">
+      <span className="install-icon" aria-hidden="true">📲</span>
+      <div className="install-text">
+        {showAndroid && <p>このアプリを ホーム画面に インストールできます！</p>}
+        {showIOS && <p>共有アイコン（<span aria-hidden="true">⬆️</span>）から「ホーム画面に追加」を えらんでね</p>}
+      </div>
+      {showAndroid && <button className="btn btn-primary install-btn" onClick={handleInstall}>インストール</button>}
+      <button className="icon-btn install-close" aria-label="とじる" onClick={dismiss}>✕</button>
+    </div>
+  );
+}
+
+/* ============================================================
    FOOTER (required, verbatim)
    ============================================================ */
 function AppFooter(){
@@ -1347,6 +1586,7 @@ function App(){
   const [history, setHistory] = useState([]);
 
   const [showManner, setShowManner] = useState(() => !safeStorage.get('katairo_manner_seen', false));
+  const [showHelp, setShowHelp] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showArt, setShowArt] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
@@ -1418,6 +1658,11 @@ function App(){
     });
   }
 
+  function handleResetCounts(){
+    setCounts(emptyCounts());
+    setHistory([]);
+  }
+
   function handleDeleteArt(id){
     setGallery(g => g.filter(item => item.id !== id));
   }
@@ -1470,11 +1715,12 @@ function App(){
               <img src="./icon-192.png" alt="ロゴ" className="w-10 h-10 rounded-xl object-cover" />
             </div>
             <div style={{minWidth:0}}>
-              <div className="brand-title">かたちあつめいろあつめ</div>
-              <div className="brand-sub">まちのなかをよくみるアプリ | 街なかSOSつき</div>
+              <div className="brand-title">かたちあつめいろあつめ - まちのなかをよくみるアプリ</div>
+              <div className="brand-sub">街なかSOSつき</div>
             </div>
           </div>
           <div style={{display:'flex', gap:'0.4rem', alignItems:'center', flexShrink:0}}>
+            <button className="icon-btn" aria-label="あそびかた" onClick={()=>setShowHelp(true)}>❓</button>
             <button className="icon-btn" aria-label="せってい" onClick={()=>setShowSettings(true)}>⚙️</button>
             <button className="sos-btn" onClick={()=>setShowSos(true)}>
               <span aria-hidden="true">🆘</span> SOS
@@ -1502,6 +1748,8 @@ function App(){
         <span>📷カメラ・📍位置情報は 使用しません。あんぜんに あそぼうね！</span>
         <button onClick={()=>setShowSettings(true)}>せってい</button>
       </div>
+
+      <InstallBanner />
 
       <main>
         <div className="greet">
@@ -1549,6 +1797,7 @@ function App(){
       <FaceUpToast show={toastVisible} onClose={()=>setToastVisible(false)} />
 
       {showManner && <MannerDialog onAgree={handleMannerAgree} />}
+      {showHelp && <HelpModal onClose={()=>setShowHelp(false)} />}
       {showSettings && (
         <SettingsSheet
           tone={tone} setTone={setTone}
@@ -1567,6 +1816,7 @@ function App(){
           profile={profile}
           onClose={()=>setShowArt(false)}
           onSaveToGallery={handleSaveArt}
+          onReset={handleResetCounts}
         />
       )}
       {showGallery && (
