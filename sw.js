@@ -1,5 +1,9 @@
 // 形いろあつめ - Minimal Service Worker (offline-first app shell)
-const CACHE_NAME = 'katairo-atsume-cache-v1';
+// v2: HTML navigations are now network-first so a redeployed index.html
+// is always picked up immediately instead of being stuck behind a stale
+// cached copy. Other static assets (icons, manifest) stay cache-first
+// with a background refresh for speed + offline support.
+const CACHE_NAME = 'katairo-atsume-cache-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -30,10 +34,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
+
+  // HTML page loads: always try the network first so updates deploy
+  // immediately. Only fall back to the cached shell when offline.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -41,7 +47,27 @@ self.addEventListener('fetch', (event) => {
           });
           return response;
         })
-        .catch(() => caches.match('./index.html'));
+        .catch(() =>
+          caches.match(event.request).then((cached) => cached || caches.match('./index.html'))
+        )
+    );
+    return;
+  }
+
+  // Other static assets (icons, manifest, fonts, etc.): serve from cache
+  // instantly if present, and refresh the cache in the background.
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      const network = fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            try { cache.put(event.request, copy); } catch (e) {}
+          });
+          return response;
+        })
+        .catch(() => cached);
+      return cached || network;
     })
   );
 });
