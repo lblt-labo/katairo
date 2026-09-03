@@ -17,10 +17,38 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
 
+<script>
+  /* ---- Boot watchdog: if the app fails to mount (CDN blocked, script
+     error, slow network on a real device, etc.) show a visible retry
+     screen instead of leaving a blank white page. Must be defined
+     BEFORE any CDN script tag so it can catch load failures too. ---- */
+  window.__katairoBooted = false;
+  window.showBootError = function(reason){
+    if(window.__katairoBooted) return;
+    try{
+      var root = document.getElementById('root');
+      if(!root) return;
+      root.innerHTML =
+        '<div style="max-width:420px;margin:3.5rem auto;padding:1.5rem;text-align:center;' +
+        'font-family:-apple-system,BlinkMacSystemFont,\'Hiragino Sans\',sans-serif;color:#23282A;">' +
+        '<p style="font-size:2.2rem;margin:0 0 0.6rem;">😥</p>' +
+        '<p style="font-weight:700;font-size:1.05rem;margin:0 0 0.5rem;">読み込みに失敗しました</p>' +
+        '<p style="font-size:0.85rem;color:#5B6265;margin:0 0 1.2rem;line-height:1.6;">' +
+        '通信状況をご確認のうえ、下のボタンでもう一度お試しください。<br>くり返し発生する場合は時間をおいてお試しください。</p>' +
+        '<button onclick="location.reload()" style="min-height:44px;padding:0 1.3rem;border-radius:999px;' +
+        'border:none;background:#1C7C8C;color:#fff;font-weight:700;font-size:0.9rem;cursor:pointer;">再読み込み</button>' +
+        '</div>';
+    }catch(e){}
+  };
+  window.addEventListener('error', function(e){ window.showBootError(e && e.message); });
+  window.addEventListener('unhandledrejection', function(e){ window.showBootError('promise'); });
+  setTimeout(function(){ window.showBootError('timeout'); }, 15000);
+</script>
+
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.6/babel.min.js" crossorigin="anonymous"></script>
 
 <style>
   :root{
@@ -342,9 +370,14 @@
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root">
+  <div style="max-width:420px;margin:4rem auto;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;color:#5B6265;">
+    <p style="font-size:1.8rem;margin:0 0 0.5rem;">🔺⬤</p>
+    <p style="font-size:0.85rem;">よみこみちゅう...</p>
+  </div>
+</div>
 
-<script type="text/babel" data-presets="react,env">
+<script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ============================================================
@@ -389,6 +422,13 @@ const TONE_MODES = [
   { id:'kukkiri',  label:'くっきり' },
   { id:'sukkiri',  label:'すっきり' },
 ];
+
+function getToneLabel(toneId){
+  for(let i=0;i<TONE_MODES.length;i++){
+    if(TONE_MODES[i].id === toneId) return TONE_MODES[i].label;
+  }
+  return '';
+}
 
 const TIMER_OPTIONS = [1,2,3];
 
@@ -1112,7 +1152,7 @@ function App(){
       <main>
         <div className="greet">
           <div className="greet-name">{profile}さんの けいすう</div>
-          <div className="greet-tone">ひょうじ：{TONE_MODES.find(t=>t.id===tone)?.label} ／ かおあげタイマー：{timerMin}分ごと</div>
+          <div className="greet-tone">ひょうじ：{getToneLabel(tone)} ／ かおあげタイマー：{timerMin}分ごと</div>
         </div>
 
         <div className="shape-grid">
@@ -1178,16 +1218,30 @@ function App(){
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+try{
+  const rootEl = ReactDOM.createRoot(document.getElementById('root'));
+  rootEl.render(<App />);
+  window.__katairoBooted = true;
+}catch(e){
+  window.showBootError && window.showBootError((e && e.message) || 'render');
+}
 </script>
 
 <script>
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('./sw.js').catch(function(){ /* ignore in sandboxed preview */ });
-    });
-  }
+  // Service Worker registration: fully isolated in try-catch so that any
+  // failure (unsupported browser, blocked scope, offline, sandboxed
+  // preview without a real origin, etc.) can never prevent the app from
+  // rendering. Registration only ever runs after the page has already
+  // painted.
+  try{
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', function(){
+        try{
+          navigator.serviceWorker.register('./sw.js').catch(function(){ /* ignore: SW is optional */ });
+        }catch(e){ /* ignore: SW is optional */ }
+      });
+    }
+  }catch(e){ /* ignore: SW is optional */ }
 </script>
 </body>
 </html>
