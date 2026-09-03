@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+<title>街歩き知育・形あつめ & 街なかSOS</title>
+<meta name="description" content="電車や街歩き中に形をさがす知育アプリ。写真・位置情報は使わず、多言語の街なかSOS機能つき。" />
+<meta name="theme-color" content="#1C7C8C" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="icon" href="./icon-192.png" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="形いろあつめ" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+
+<style>
+  :root{
+    --bg: #F5F6F0;
+    --surface: #FFFFFF;
+    --surface-alt: #EBEEE3;
+    --ink: #23282A;
+    --ink-soft: #5B6265;
+    --line: #DCDED4;
+
+    --maru: #1C7C8C;
+    --maru-dark: #145867;
+    --sankaku: #E2672B;
+    --sankaku-dark: #B24E1F;
+    --shikaku: #5B4E8C;
+    --shikaku-dark: #423669;
+    --aachi: #C9A227;
+    --aachi-dark: #9C7D1B;
+
+    --sos: #D6483A;
+    --sos-dark: #A9382D;
+
+    --font-display: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', sans-serif;
+    --font-body: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Noto Sans JP', sans-serif;
+
+    --radius-badge: 999px;
+    --radius-card: 22px;
+    --radius-tile: 20px;
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  h1,h2,h3, .display{ font-family: var(--font-display); }
+
+  button{ font-family: inherit; }
+  button:focus-visible, [tabindex]:focus-visible, a:focus-visible, input:focus-visible{
+    outline: 3px solid #1C7C8C;
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar{ width: 8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background: var(--line); border-radius: 10px; }
+
+  .app-shell{
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ---- Header ---- */
+  .app-header{
+    position: sticky; top:0; z-index: 30;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 0.65rem 0.85rem;
+  }
+  .brand-row{ display:flex; align-items:center; justify-content: space-between; gap: 0.5rem; }
+  .brand{ display:flex; align-items:center; gap:0.5rem; min-width:0; }
+  .brand-badge{
+    width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--maru), var(--maru-dark));
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
+  }
+  .brand-title{ font-family: var(--font-display); font-weight:800; font-size: 1.02rem; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brand-sub{ font-size: 0.68rem; color: var(--ink-soft); }
+
+  .icon-btn{
+    min-width:44px; min-height:44px; border-radius: var(--radius-badge);
+    display:flex; align-items:center; justify-content:center;
+    border: 1.5px solid var(--line); background: var(--surface);
+    font-size: 1.15rem; cursor:pointer; transition: transform .12s ease, background .15s ease;
+  }
+  .icon-btn:active{ transform: scale(0.92); }
+
+  .sos-btn{
+    background: var(--sos); color:#fff; border-color: var(--sos-dark);
+    font-weight: 800; font-family: var(--font-display);
+    padding: 0 0.85rem; min-height: 44px; border-radius: var(--radius-badge);
+    display:flex; align-items:center; gap:0.35rem; font-size:0.85rem;
+    box-shadow: 0 3px 0 var(--sos-dark);
+  }
+  .sos-btn:active{ transform: translateY(2px); box-shadow:none; }
+
+  /* ---- profile pills ---- */
+  .profile-row{ display:flex; gap:0.4rem; margin-top:0.6rem; overflow-x:auto; padding-bottom:2px; }
+  .profile-pill{
+    flex-shrink:0; min-height:40px; padding: 0 0.9rem; border-radius: var(--radius-badge);
+    border: 1.5px solid var(--line); background: var(--surface-alt);
+    font-weight:700; font-size:0.85rem; color: var(--ink-soft);
+    display:flex; align-items:center; gap:0.3rem; cursor:pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .profile-pill.active{
+    background: var(--ink); color:#fff; border-color: var(--ink);
+  }
+  .profile-pill .check{ font-size:0.75rem; }
+
+  /* ---- safety strip ---- */
+  .safety-strip{
+    background: var(--surface-alt);
+    color: var(--ink-soft);
+    font-size: 0.72rem;
+    padding: 0.4rem 0.85rem;
+    display:flex; align-items:center; justify-content:space-between; gap:0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .safety-strip button{
+    background:none; border:none; color: var(--maru-dark); font-weight:700; font-size:0.72rem;
+    text-decoration: underline; cursor:pointer; min-height:32px; flex-shrink:0;
+  }
+
+  /* ---- main ---- */
+  main{ flex:1; padding: 1rem 0.85rem 2rem; }
+
+  .greet{ margin-bottom: 0.9rem; }
+  .greet-name{ font-family: var(--font-display); font-weight:800; font-size:1.35rem; }
+  .greet-tone{ font-size:0.78rem; color: var(--ink-soft); margin-top:0.15rem; }
+
+  .shape-grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 0.7rem;
+  }
+  .shape-tile{
+    position: relative;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-tile);
+    padding: 0.9rem 0.6rem 0.7rem;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height: 148px;
+    cursor:pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+    transition: transform .08s ease;
+    user-select:none;
+  }
+  .shape-tile:active{ transform: scale(0.96); }
+  .shape-tile .count-chip{
+    position:absolute; top:0.5rem; right:0.5rem;
+    min-width: 30px; height: 26px; padding: 0 0.4rem;
+    border-radius: var(--radius-badge);
+    color:#fff; font-weight:800; font-size:0.8rem; font-family: var(--font-display);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .shape-tile .icon-wrap{ width:64px; height:64px; display:flex; align-items:center; justify-content:center; margin-bottom:0.35rem; }
+  .shape-tile .shape-label{ font-weight:700; font-size:0.85rem; color: var(--ink); }
+  .shape-tile.pulse{ animation: tilePulse 0.42s ease; }
+  @keyframes tilePulse{
+    0%{ transform: scale(1); }
+    35%{ transform: scale(1.08); }
+    100%{ transform: scale(1); }
+  }
+  .ring-burst{
+    position:absolute; inset:0; border-radius: var(--radius-tile);
+    border: 3px solid transparent; pointer-events:none;
+  }
+  .ring-burst.show{ animation: ringBurst 0.5s ease-out; }
+  @keyframes ringBurst{
+    0%{ box-shadow: 0 0 0 0 rgba(0,0,0,0.18); }
+    100%{ box-shadow: 0 0 0 10px rgba(0,0,0,0); }
+  }
+
+  .stats-card{
+    margin-top: 1rem; background: var(--surface); border:1.5px solid var(--line);
+    border-radius: var(--radius-card); padding: 1rem;
+  }
+  .stats-total{ display:flex; align-items:baseline; gap:0.4rem; justify-content:center; margin-bottom:0.85rem; }
+  .stats-total b{ font-family: var(--font-display); font-size: 1.9rem; color: var(--maru-dark); }
+  .stats-total span{ font-size: 0.85rem; color: var(--ink-soft); }
+
+  .btn{
+    min-height: 48px; border-radius: var(--radius-badge); border:none; cursor:pointer;
+    font-weight:800; font-family: var(--font-display); font-size:0.92rem;
+    display:flex; align-items:center; justify-content:center; gap:0.4rem;
+    transition: transform .1s ease, opacity .15s ease;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; }
+  .btn-primary{ background: var(--maru); color:#fff; box-shadow: 0 3px 0 var(--maru-dark); }
+  .btn-primary:active:not(:disabled){ box-shadow:none; transform: translateY(3px) scale(0.99); }
+  .btn-secondary{ background: var(--surface-alt); color: var(--ink); border:1.5px solid var(--line); }
+  .btn-row{ display:flex; gap:0.6rem; }
+  .btn-row .btn{ flex:1; }
+
+  /* ---- footer ---- */
+  footer{ margin-top: auto; }
+
+  /* ---- toast ---- */
+  .faceup-toast{
+    position: fixed; top: 0.7rem; left:50%; transform: translateX(-50%) translateY(-140%);
+    max-width: 560px; width: calc(100% - 1.4rem);
+    background: var(--ink); color:#fff; border-radius: 16px;
+    padding: 0.7rem 0.9rem; display:flex; align-items:center; gap:0.6rem;
+    z-index: 80; box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    transition: transform .35s cubic-bezier(.34,1.3,.64,1);
+  }
+  .faceup-toast.show{ transform: translateX(-50%) translateY(0); }
+  .faceup-toast p{ font-size:0.82rem; line-height:1.4; margin:0; flex:1; }
+  .faceup-toast .close-x{ background:rgba(255,255,255,0.15); border:none; color:#fff; width:30px; height:30px; border-radius:50%; flex-shrink:0; cursor:pointer; font-size:0.9rem; }
+
+  /* ---- modal ---- */
+  .modal-overlay{
+    position: fixed; inset:0; background: rgba(20,20,18,0.5);
+    display:flex; align-items:flex-end; justify-content:center; z-index: 100;
+    padding: 0;
+  }
+  @media (min-width: 640px){
+    .modal-overlay{ align-items:center; padding: 1rem; }
+  }
+  .modal-sheet{
+    background: var(--surface); width:100%; max-width:600px;
+    border-radius: 24px 24px 0 0;
+    max-height: 92vh; overflow-y:auto;
+    padding: 1.1rem 1.1rem 1.4rem;
+    animation: sheetUp .28s cubic-bezier(.32,.72,0,1);
+  }
+  @media (min-width: 640px){
+    .modal-sheet{ border-radius: 24px; max-height: 88vh; }
+  }
+  @keyframes sheetUp{ from{ transform: translateY(24px); opacity:0; } to{ transform: translateY(0); opacity:1; } }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:0.9rem; }
+  .modal-title{ font-family: var(--font-display); font-weight:800; font-size:1.1rem; }
+
+  .segmented{ display:flex; background: var(--surface-alt); border-radius: var(--radius-badge); padding:4px; gap:2px; }
+  .segmented button{
+    flex:1; border:none; background:transparent; padding: 0.55rem 0.3rem; border-radius: var(--radius-badge);
+    font-weight:700; font-size: 0.8rem; color: var(--ink-soft); cursor:pointer; min-height:40px;
+  }
+  .segmented button.active{ background: var(--ink); color:#fff; }
+
+  .field-group{ margin-bottom: 1.1rem; }
+  .field-label{ font-weight:800; font-size:0.85rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.35rem; }
+  .field-hint{ font-size:0.72rem; color: var(--ink-soft); margin-top:0.4rem; }
+
+  .swatch-row{ display:flex; gap:0.5rem; flex-wrap:wrap; }
+  .swatch{
+    padding: 0.5rem 0.8rem; border-radius: var(--radius-badge); border: 2px solid var(--line);
+    display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-weight:700; font-size:0.8rem; background:#fff;
+    min-height:44px;
+  }
+  .swatch.active{ border-color: var(--ink); background: var(--surface-alt); }
+  .swatch-dots{ display:flex; }
+  .swatch-dots i{ width:12px; height:12px; border-radius:50%; margin-left:-4px; border:1.5px solid #fff; display:inline-block; }
+  .swatch-dots i:first-child{ margin-left:0; }
+
+  .art-canvas-wrap{ border-radius: 18px; overflow:hidden; border:1.5px solid var(--line); background: var(--surface-alt); margin-bottom: 0.9rem; }
+  .art-canvas-wrap canvas{ width:100%; height:auto; display:block; }
+
+  .gallery-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:0.5rem; }
+  .gallery-item{ position:relative; border-radius:14px; overflow:hidden; border:1.5px solid var(--line); aspect-ratio:1/1; cursor:pointer; background: var(--surface-alt); }
+  .gallery-item img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .gallery-empty{ text-align:center; padding: 2rem 1rem; color: var(--ink-soft); font-size:0.85rem; }
+
+  .manner-list{ display:flex; flex-direction:column; gap:0.6rem; margin: 0.9rem 0 1.2rem; }
+  .manner-item{ display:flex; gap:0.6rem; align-items:flex-start; background: var(--surface-alt); padding:0.7rem; border-radius:14px; }
+  .manner-item .em{ font-size:1.3rem; line-height:1; flex-shrink:0; }
+  .manner-item p{ margin:0; font-size:0.85rem; line-height:1.5; }
+
+  /* ---- SOS ---- */
+  .sos-lang-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem; }
+  .sos-lang-btn{
+    border:1.5px solid var(--line); background:#fff; border-radius:16px; padding:0.9rem 0.6rem;
+    display:flex; flex-direction:column; align-items:center; gap:0.3rem; cursor:pointer; min-height:70px;
+  }
+  .sos-lang-btn .flag{ font-size:1.6rem; }
+  .sos-lang-btn .lbl{ font-weight:700; font-size:0.85rem; }
+
+  .sos-cat-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem; }
+  .sos-cat-btn{
+    border:1.5px solid var(--line); background:#fff; border-radius:16px; padding:1rem 0.6rem;
+    display:flex; flex-direction:column; align-items:center; gap:0.4rem; cursor:pointer; min-height:100px; text-align:center;
+  }
+  .sos-cat-btn .em{ font-size:2rem; }
+  .sos-cat-btn .lbl{ font-weight:800; font-size:0.82rem; line-height:1.3; }
+  .sos-cat-btn .lbl-sub{ font-size:0.68rem; color: var(--ink-soft); }
+
+  .sos-question-card{ background: var(--surface-alt); border-radius:18px; padding:1.1rem; text-align:center; margin-bottom:1rem; }
+  .sos-question-card .em{ font-size:2.2rem; }
+  .sos-question-card p{ font-weight:800; font-size:1.02rem; margin: 0.5rem 0 0.2rem; }
+  .sos-question-card .sub{ font-size:0.8rem; color: var(--ink-soft); font-weight:500; }
+
+  .sos-answer-row{ display:flex; flex-direction:column; gap:0.55rem; }
+  .sos-answer-btn{
+    min-height:52px; border-radius:16px; border:1.5px solid var(--line); background:#fff;
+    font-weight:800; font-size:0.95rem; cursor:pointer;
+  }
+
+  .sos-result-card{
+    border-radius:20px; padding:1.2rem; color:#fff; background: linear-gradient(160deg, var(--maru), var(--maru-dark));
+    text-align:center; margin-bottom:1rem;
+  }
+  .sos-result-card .badge{ background: rgba(255,255,255,0.2); display:inline-block; padding:0.25rem 0.7rem; border-radius:var(--radius-badge); font-size:0.7rem; font-weight:700; margin-bottom:0.6rem; }
+  .sos-result-card .phrase-main{ font-size:1.15rem; font-weight:800; line-height:1.5; margin-bottom:0.5rem; }
+  .sos-result-card .phrase-sub{ font-size:0.85rem; opacity:0.92; line-height:1.5; margin-bottom:0.7rem; }
+  .sos-result-card .note{ font-size:0.75rem; background: rgba(255,255,255,0.15); border-radius:12px; padding:0.6rem; line-height:1.5; }
+
+  .emergency-row{ display:flex; gap:0.5rem; }
+  .emergency-chip{ flex:1; background: var(--surface-alt); border-radius:14px; padding:0.6rem; text-align:center; }
+  .emergency-chip b{ display:block; font-family: var(--font-display); font-size:1.15rem; color: var(--sos-dark); }
+  .emergency-chip span{ font-size:0.68rem; color: var(--ink-soft); }
+
+  .step-back{ background:none; border:none; color: var(--ink-soft); font-weight:700; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; gap:0.2rem; min-height:40px; }
+
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react,env">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ============================================================
+   SAFE STORAGE — localStorage with in-memory fallback so the
+   app never throws inside sandboxed preview environments.
+   ============================================================ */
+const memoryStore = {};
+const safeStorage = {
+  get(key, fallback){
+    try{
+      const raw = window.localStorage.getItem(key);
+      if(raw === null || raw === undefined) return fallback;
+      return JSON.parse(raw);
+    }catch(e){
+      return Object.prototype.hasOwnProperty.call(memoryStore, key) ? memoryStore[key] : fallback;
+    }
+  },
+  set(key, value){
+    memoryStore[key] = value;
+    try{
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+};
+
+/* ============================================================
+   DATA: shapes, tones, profiles, palettes
+   ============================================================ */
+const SHAPES = [
+  { id:'maru',    color:'var(--maru)',    dark:'var(--maru-dark)',    labels:{ fuwafuwa:'まる',   kukkiri:'円',   sukkiri:'' } },
+  { id:'sankaku', color:'var(--sankaku)', dark:'var(--sankaku-dark)', labels:{ fuwafuwa:'さんかく', kukkiri:'三角形', sukkiri:'' } },
+  { id:'shikaku', color:'var(--shikaku)', dark:'var(--shikaku-dark)', labels:{ fuwafuwa:'しかく',  kukkiri:'四角形', sukkiri:'' } },
+  { id:'aachi',   color:'var(--aachi)',   dark:'var(--aachi-dark)',   labels:{ fuwafuwa:'アーチ',  kukkiri:'半円',  sukkiri:'' } },
+];
+const SHAPE_ARIA = { maru:'まる', sankaku:'さんかく', shikaku:'しかく', aachi:'アーチ' };
+
+const TONE_MODES = [
+  { id:'fuwafuwa', label:'ふんわり' },
+  { id:'kukkiri',  label:'くっきり' },
+  { id:'sukkiri',  label:'すっきり' },
+];
+
+const TIMER_OPTIONS = [1,2,3];
+
+const DEFAULT_PROFILES = ['みさ','けんと','ママ'];
+
+const PALETTES = {
+  pop:     { label:'ポップ',     colors:['#FF6F61','#FFC857','#4D9DE0','#845EC2'] },
+  natural: { label:'ナチュラル', colors:['#8C9A6B','#D9A566','#6E8B74','#C9B79C'] },
+  cool:    { label:'クール',     colors:['#2E6F95','#5AA9C9','#8FD1D9','#2E4057'] },
+  warm:    { label:'ウォーム',   colors:['#E8792E','#F2B33D','#D65D3A','#F7DBA7'] },
+};
+
+/* ============================================================
+   DATA: SOS content (4 languages)
+   ============================================================ */
+const LANGS = [
+  { code:'ja', flag:'🇯🇵', label:'日本語' },
+  { code:'en', flag:'🇬🇧', label:'English' },
+  { code:'zh', flag:'🇨🇳', label:'中文' },
+  { code:'ko', flag:'🇰🇷', label:'한국어' },
+];
+
+const SOS_UI = {
+  title:      { ja:'街なかSOS', en:'Town SOS', zh:'城市SOS', ko:'거리 SOS' },
+  pickLang:   { ja:'ことばを えらんでね', en:'Choose a language', zh:'请选择语言', ko:'언어를 선택하세요' },
+  pickCat:    { ja:'こまっていることは？', en:'What is the problem?', zh:'遇到什么困难？', ko:'무슨 문제인가요?' },
+  yes:        { ja:'はい', en:'Yes', zh:'是', ko:'네' },
+  no:         { ja:'いいえ', en:'No', zh:'不是', ko:'아니요' },
+  dunno:      { ja:'わからない', en:"Don't know", zh:'不知道', ko:'모르겠어요' },
+  back:       { ja:'もどる', en:'Back', zh:'返回', ko:'뒤로' },
+  close:      { ja:'とじる', en:'Close', zh:'关闭', ko:'닫기' },
+  showScreen: { ja:'この がめんを 人に みせてください', en:'Please show this screen to someone', zh:'请把这个画面给别人看', ko:'이 화면을 다른 사람에게 보여주세요' },
+  emergency:  { ja:'きんきゅう れんらくさき', en:'Emergency numbers', zh:'紧急联系电话', ko:'긴급 연락처' },
+  ambulance:  { ja:'きゅうきゅう・かじ', en:'Ambulance / Fire', zh:'救护车/火警', ko:'구급차/화재' },
+  police:     { ja:'けいさつ', en:'Police', zh:'警察', ko:'경찰' },
+  again:      { ja:'はじめから', en:'Start over', zh:'重新开始', ko:'처음부터' },
+};
+
+const SOS_CATEGORIES = [
+  {
+    id:'itai', em:'🤕',
+    label:{ ja:'いたい・ぐあい', en:'Hurt / Sick', zh:'受伤·不舒服', ko:'다침·아픔' },
+    question:{ ja:'きゅうきゅうしゃが ひつようですか？', en:'Do you need an ambulance?', zh:'需要叫救护车吗？', ko:'구급차가 필요한가요?' },
+    yes:{
+      title:{ ja:'119ばんに でんわしてください', en:'Please call 119', zh:'请拨打119', ko:'119에 전화해 주세요' },
+      phrase:{ ja:'きゅうきゅうしゃを よんでください。', en:'Please call an ambulance.', zh:'请叫救护车。', ko:'구급차를 불러 주세요.' },
+      note:{ ja:'ちかくの おとなや えきいん・てんいんに つたえましょう。', en:'Tell a nearby adult, station staff, or shop staff right away.', zh:'请立刻告诉附近的大人、车站或商店工作人员。', ko:'근처 어른이나 역무원, 점원에게 바로 알려주세요.' }
+    },
+    no:{
+      title:{ ja:'ちかくの人に つたえましょう', en:'Ask someone nearby for help', zh:'请向附近的人求助', ko:'근처 사람에게 도움을 요청하세요' },
+      phrase:{ ja:'たすけてください。ぐあいが わるいです。', en:'Please help me. I feel unwell.', zh:'请帮帮我，我身体不舒服。', ko:'도와주세요. 몸이 안 좋아요.' },
+      note:{ ja:'えきいんさんや おみせの人に この がめんを みせてください。', en:'Show this screen to station or shop staff.', zh:'请把这个画面给车站或商店工作人员看。', ko:'역무원이나 가게 직원에게 이 화면을 보여주세요.' }
+    }
+  },
+  {
+    id:'michi', em:'🗺️',
+    label:{ ja:'みちが わからない', en:'Lost / Directions', zh:'迷路了', ko:'길을 잃었어요' },
+    question:{ ja:'えきや おみせの人に みちを きいても いいですか？', en:'Is it okay to ask a station or shop staff for directions?', zh:'可以向车站或商店的人问路吗？', ko:'역이나 가게 직원에게 길을 물어봐도 될까요?' },
+    yes:{
+      title:{ ja:'ちかくの人に きいてみましょう', en:'Ask someone nearby', zh:'向附近的人询问吧', ko:'근처 사람에게 물어보세요' },
+      phrase:{ ja:'すみません、みちに まよいました。てつだって ください。', en:'Excuse me, I am lost. Could you help me, please?', zh:'不好意思，我迷路了，请帮帮我。', ko:'실례합니다, 길을 잃었어요. 도와주세요.' },
+      note:{ ja:'いきたい ばしょを かいた かみや ちずアプリを みせると つたわりやすいです。', en:'It helps to also show a written place name or a map app.', zh:'出示写有目的地的纸条或地图App会更容易沟通。', ko:'가고 싶은 곳을 적은 메모나 지도 앱을 함께 보여주면 좋아요.' }
+    },
+    no:{
+      title:{ ja:'あんぜんな ばしょで まちましょう', en:'Wait in a safe place', zh:'请在安全的地方等待', ko:'안전한 곳에서 기다리세요' },
+      phrase:{ ja:'みちに まよいました。', en:'I am lost.', zh:'我迷路了。', ko:'길을 잃었어요.' },
+      note:{ ja:'えきの かいさつぐちや おみせの中など、あかるくて 人が多い ばしょで まちましょう。', en:'Wait in a bright, busy place such as a station gate or inside a shop.', zh:'请在车站检票口、商店内等明亮且人多的地方等待。', ko:'역 개찰구나 가게 안처럼 밝고 사람이 많은 곳에서 기다리세요.' }
+    }
+  },
+  {
+    id:'maigo', em:'🏠',
+    label:{ ja:'おうち・まいご', en:'Lost / Separated', zh:'走失了', ko:'미아·헤어짐' },
+    question:{ ja:'おうちの人と はぐれましたか？', en:'Did you get separated from your family?', zh:'和家人走散了吗？', ko:'가족과 떨어졌나요?' },
+    yes:{
+      title:{ ja:'えきいんさんや けいさつの人に つたえましょう', en:'Tell station staff or police', zh:'请告诉车站工作人员或警察', ko:'역무원이나 경찰에게 알려주세요' },
+      phrase:{ ja:'まいごに なりました。たすけてください。', en:'I am lost from my family. Please help me.', zh:'我和家人走散了，请帮帮我。', ko:'가족과 헤어졌어요. 도와주세요.' },
+      note:{ ja:'こうばん（交番）、あんないじょ、えきの じむしつに いきましょう。', en:'Go to a police box (koban), information desk, or station office.', zh:'请前往派出所、问询处或车站办公室。', ko:'파출소, 안내소, 역 사무실로 가세요.' }
+    },
+    no:{
+      title:{ ja:'あんしんできる 大人に つたえましょう', en:'Tell a trustworthy adult', zh:'请告诉可信赖的大人', ko:'믿을 수 있는 어른에게 알려주세요' },
+      phrase:{ ja:'まいごの 子どもが います。', en:'There is a lost child here.', zh:'这里有一个走失的孩子。', ko:'길을 잃은 아이가 있어요.' },
+      note:{ ja:'ちかくの えきいんさんや おみせの人に つたえましょう。', en:'Please tell nearby station or shop staff.', zh:'请告诉附近的车站或商店工作人员。', ko:'근처 역무원이나 가게 직원에게 알려주세요.' }
+    }
+  },
+  {
+    id:'onaka', em:'🍙',
+    label:{ ja:'おなかへった・のど', en:'Hungry / Thirsty', zh:'饿了/渴了', ko:'배고파요·목말라요' },
+    question:{ ja:'アレルギーが ありますか？', en:'Do you have any food allergies?', zh:'有食物过敏吗？', ko:'음식 알레르기가 있나요?' },
+    yes:{
+      title:{ ja:'アレルギーを つたえましょう', en:'Let them know about your allergy', zh:'请告知过敏情况', ko:'알레르기를 알려주세요' },
+      phrase:{ ja:'アレルギーが あります。食べられる ものを おしえてください。', en:'I have a food allergy. Could you tell me what I can eat?', zh:'我有食物过敏，请告诉我能吃什么。', ko:'알레르기가 있어요. 먹을 수 있는 음식을 알려주세요.' },
+      note:{ ja:'アレルギーの しゅるいも いっしょに つたえると あんしんです。', en:'It helps to also mention what food you are allergic to.', zh:'一并说明过敏的食物种类会更安心。', ko:'어떤 알레르기인지 함께 말하면 더 안전해요.' }
+    },
+    no:{
+      title:{ ja:'ちかくの おみせを さがしましょう', en:'Look for a nearby shop', zh:'请寻找附近的商店', ko:'근처 가게를 찾아보세요' },
+      phrase:{ ja:'何か 食べる／飲む ものが ほしいです。', en:'I would like something to eat or drink.', zh:'我想要一些吃的或喝的。', ko:'먹을 것이나 마실 것을 원해요.' },
+      note:{ ja:'コンビニや えきの中の おみせで きいてみましょう。', en:'Try asking at a convenience store or a shop inside the station.', zh:'可以在便利店或车站内的商店询问。', ko:'편의점이나 역 안의 가게에서 물어보세요.' }
+    }
+  }
+];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function keyProfileCounts(p){ return `katairo_counts_${p}`; }
+function keyProfileGallery(p){ return `katairo_gallery_${p}`; }
+const emptyCounts = () => ({ maru:0, sankaku:0, shikaku:0, aachi:0 });
+
+function hexToRgba(hex, alpha){
+  const h = hex.replace('#','');
+  const bigint = parseInt(h.length===3 ? h.split('').map(c=>c+c).join('') : h, 16);
+  const r = (bigint>>16)&255, g=(bigint>>8)&255, b=bigint&255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function drawShape(ctx, shapeId, x, y, r, color, alpha, rot){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.fillStyle = color;
+  if(shapeId === 'maru'){
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+  } else if(shapeId === 'sankaku'){
+    ctx.beginPath();
+    ctx.moveTo(0,-r); ctx.lineTo(r*0.87, r*0.6); ctx.lineTo(-r*0.87, r*0.6); ctx.closePath(); ctx.fill();
+  } else if(shapeId === 'shikaku'){
+    const s = r*1.5;
+    ctx.beginPath();
+    const rr = s*0.18;
+    ctx.moveTo(-s/2+rr, -s/2);
+    ctx.arcTo(s/2,-s/2, s/2,s/2, rr);
+    ctx.arcTo(s/2,s/2, -s/2,s/2, rr);
+    ctx.arcTo(-s/2,s/2, -s/2,-s/2, rr);
+    ctx.arcTo(-s/2,-s/2, s/2,-s/2, rr);
+    ctx.closePath(); ctx.fill();
+  } else if(shapeId === 'aachi'){
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI,false); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function generateArt(canvas, counts, paletteColors){
+  const size = canvas.width;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+
+  const bgGrad = ctx.createLinearGradient(0,0,size,size);
+  bgGrad.addColorStop(0, hexToRgba(paletteColors[0], 0.18));
+  bgGrad.addColorStop(1, hexToRgba(paletteColors[3] || paletteColors[0], 0.18));
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0,0,size,size);
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0,0,size,size);
+
+  const total = SHAPES.reduce((sum,s) => sum + (counts[s.id]||0), 0);
+  if(total <= 0) return false;
+
+  const totalDraws = 80;
+  const seedBase = Date.now();
+  let seed = seedBase % 100000;
+  function rand(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+
+  SHAPES.forEach((shape, i) => {
+    const ratio = (counts[shape.id]||0) / total;
+    const n = counts[shape.id] > 0 ? Math.max(4, Math.round(ratio * totalDraws)) : 0;
+    const color = paletteColors[i % paletteColors.length];
+    for(let j=0;j<n;j++){
+      const x = rand()*size;
+      const y = rand()*size;
+      const r = size*0.035 + rand()*size*0.09;
+      const alpha = 0.5 + rand()*0.4;
+      const rot = rand()*Math.PI*2;
+      drawShape(ctx, shape.id, x, y, r, color, alpha, rot);
+    }
+  });
+  return true;
+}
+
+/* ============================================================
+   SVG ICONS for shape tiles
+   ============================================================ */
+function ShapeIcon({ id, color, size=56 }){
+  if(id === 'maru') return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="50" r="42" fill={color} />
+    </svg>
+  );
+  if(id === 'sankaku') return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      <polygon points="50,8 92,88 8,88" fill={color} />
+    </svg>
+  );
+  if(id === 'shikaku') return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      <rect x="10" y="10" width="80" height="80" rx="16" fill={color} />
+    </svg>
+  );
+  if(id === 'aachi') return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M 8 82 A 42 42 0 0 1 92 82 Z" fill={color} />
+    </svg>
+  );
+  return null;
+}
+
+/* ============================================================
+   MANNER DIALOG
+   ============================================================ */
+function MannerDialog({ onAgree }){
+  const items = [
+    { em:'🚶', text:'あるきながら つかわない（歩きスマホは キケンです）' },
+    { em:'👀', text:'ときどき まわりを かくにんしよう' },
+    { em:'🤝', text:'しらない人には ついていかない' },
+    { em:'🗣️', text:'こまったときは そばの おとなに はなそう' },
+  ];
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="manner-title">
+      <div className="modal-sheet">
+        <div className="modal-head">
+          <h2 id="manner-title" className="modal-title">はじめる まえの やくそく</h2>
+        </div>
+        <p style={{fontSize:'0.85rem', color:'var(--ink-soft)', lineHeight:1.6}}>
+          あんぜんに たのしく あそぶために、つぎの やくそくを まもってね。
+        </p>
+        <div className="manner-list">
+          {items.map((it,idx) => (
+            <div className="manner-item" key={idx}>
+              <span className="em" aria-hidden="true">{it.em}</span>
+              <p>{it.text}</p>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-primary" style={{width:'100%'}} onClick={onAgree}>
+          やくそくする！はじめる
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   SETTINGS SHEET (tone + face-up timer)
+   ============================================================ */
+function SettingsSheet({ tone, setTone, timerMin, setTimerMin, onClose }){
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="modal-sheet">
+        <div className="modal-head">
+          <h2 id="settings-title" className="modal-title">せってい</h2>
+          <button className="icon-btn" aria-label="とじる" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="field-group">
+          <div className="field-label">🔤 もじの ひょうじ（トーン）</div>
+          <div className="segmented" role="radiogroup" aria-label="トーンをえらぶ">
+            {TONE_MODES.map(t => (
+              <button key={t.id} className={tone===t.id ? 'active':''} role="radio" aria-checked={tone===t.id} onClick={()=>setTone(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <p className="field-hint">
+            {tone==='fuwafuwa' && '例）まる・さんかく・しかく・アーチ の やさしい ひょうき'}
+            {tone==='kukkiri' && '例）円・三角形・四角形・半円 の かんじ ひょうき'}
+            {tone==='sukkiri' && '形の アイコンだけを ひょうじし、もじは かくします'}
+          </p>
+        </div>
+
+        <div className="field-group">
+          <div className="field-label">👀 かおあげタイマー</div>
+          <div className="segmented" role="radiogroup" aria-label="タイマーかんかくをえらぶ">
+            {TIMER_OPTIONS.map(m => (
+              <button key={m} className={timerMin===m ? 'active':''} role="radio" aria-checked={timerMin===m} onClick={()=>setTimerMin(m)}>
+                {m}分ごと
+              </button>
+            ))}
+          </div>
+          <p className="field-hint">きめた かんかくで「まわりを かくにんしよう」の おしらせが でます。</p>
+        </div>
+
+        <button className="btn btn-primary" style={{width:'100%'}} onClick={onClose}>とじる</button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ART MODAL
+   ============================================================ */
+function ArtModal({ counts, profile, onClose, onSaveToGallery }){
+  const canvasRef = useRef(null);
+  const [paletteKey, setPaletteKey] = useState('pop');
+  const [hasArt, setHasArt] = useState(false);
+  const [shareMsg, setShareMsg] = useState('');
+
+  const render = useCallback(() => {
+    const canvas = canvasRef.current;
+    if(!canvas) return;
+    const ok = generateArt(canvas, counts, PALETTES[paletteKey].colors);
+    setHasArt(ok);
+  }, [counts, paletteKey]);
+
+  useEffect(() => { render(); }, [render]);
+
+  const totalCount = SHAPES.reduce((s,sh)=> s + (counts[sh.id]||0), 0);
+
+  function handleSavePng(){
+    const canvas = canvasRef.current;
+    if(!canvas || !hasArt) return;
+    try{
+      canvas.toBlob((blob) => {
+        if(!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `katairo-art-${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      }, 'image/png');
+    }catch(e){ setShareMsg('ほぞんできませんでした。もう一度 おためしください。'); }
+  }
+
+  function handleAddToGallery(){
+    const canvas = canvasRef.current;
+    if(!canvas || !hasArt) return;
+    try{
+      const thumb = document.createElement('canvas');
+      thumb.width = 160; thumb.height = 160;
+      thumb.getContext('2d').drawImage(canvas, 0, 0, 160, 160);
+      const dataUrl = thumb.toDataURL('image/jpeg', 0.72);
+      onSaveToGallery(dataUrl);
+      setShareMsg('コレクションに ほぞんしました！');
+    }catch(e){ setShareMsg('ほぞんできませんでした。'); }
+  }
+
+  async function handleShare(){
+    const canvas = canvasRef.current;
+    if(!canvas || !hasArt) return;
+    const shareText = `#KataIroAtsume 形いろあつめで アートを つくったよ！`;
+    try{
+      if(navigator.share){
+        canvas.toBlob(async (blob) => {
+          try{
+            if(blob && navigator.canShare && window.File){
+              const file = new File([blob], 'katairo-art.png', { type:'image/png' });
+              if(navigator.canShare({ files:[file] })){
+                await navigator.share({ files:[file], text: shareText, title:'形いろあつめ' });
+                setShareMsg('シェアしました！');
+                return;
+              }
+            }
+            await navigator.share({ text: shareText, title:'形いろあつめ' });
+            setShareMsg('シェアしました！');
+          }catch(err){
+            /* user cancelled or share failed silently */
+          }
+        }, 'image/png');
+      } else {
+        try{
+          await navigator.clipboard.writeText(shareText);
+          setShareMsg('ハッシュタグを コピーしました！SNSに はりつけて シェアしてね📋');
+        }catch(e){
+          setShareMsg(shareText);
+        }
+      }
+    }catch(e){
+      setShareMsg('シェアできませんでした。');
+    }
+  }
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="art-title" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="modal-sheet">
+        <div className="modal-head">
+          <h2 id="art-title" className="modal-title">🎨 {profile}の アート</h2>
+          <button className="icon-btn" aria-label="とじる" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="art-canvas-wrap">
+          <canvas ref={canvasRef} width="600" height="600"></canvas>
+        </div>
+
+        {!hasArt && (
+          <p style={{fontSize:'0.82rem', color:'var(--ink-soft)', textAlign:'center', marginBottom:'0.9rem'}}>
+            形を まだ カウントしていません。まずは 形を タップして あつめてね🔍
+          </p>
+        )}
+
+        <div className="field-group">
+          <div className="field-label">🎨 カラーパレット</div>
+          <div className="swatch-row">
+            {Object.entries(PALETTES).map(([key, pal]) => (
+              <button key={key} className={`swatch ${paletteKey===key ? 'active':''}`} onClick={()=>setPaletteKey(key)}>
+                <span className="swatch-dots" aria-hidden="true">
+                  {pal.colors.slice(0,4).map((c,i)=>(<i key={i} style={{background:c}}></i>))}
+                </span>
+                {pal.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="btn-row" style={{marginBottom:'0.6rem'}}>
+          <button className="btn btn-secondary" onClick={render}>🔄 つくりなおす</button>
+          <button className="btn btn-secondary" onClick={handleAddToGallery} disabled={!hasArt}>📚 コレクションに保存</button>
+        </div>
+        <div className="btn-row">
+          <button className="btn btn-primary" onClick={handleSavePng} disabled={!hasArt}>💾 PNGで保存</button>
+          <button className="btn btn-primary" onClick={handleShare} disabled={!hasArt}>📤 シェア</button>
+        </div>
+
+        {shareMsg && <p style={{fontSize:'0.78rem', color:'var(--maru-dark)', fontWeight:700, textAlign:'center', marginTop:'0.7rem'}}>{shareMsg}</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   GALLERY MODAL
+   ============================================================ */
+function GalleryModal({ gallery, profile, onClose, onDelete }){
+  const [viewing, setViewing] = useState(null);
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gallery-title" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="modal-sheet">
+        <div className="modal-head">
+          <h2 id="gallery-title" className="modal-title">📚 {profile}の コレクション</h2>
+          <button className="icon-btn" aria-label="とじる" onClick={onClose}>✕</button>
+        </div>
+
+        {gallery.length === 0 ? (
+          <div className="gallery-empty">まだ アートが ありません。<br/>「アートを つくる」から はじめてみよう🎨</div>
+        ) : viewing ? (
+          <div>
+            <img src={viewing.dataUrl} alt="保存したアート" style={{width:'100%', borderRadius:'16px', marginBottom:'0.8rem'}} />
+            <div className="btn-row">
+              <button className="btn btn-secondary" onClick={()=>setViewing(null)}>← いちらんに もどる</button>
+              <button className="btn btn-secondary" style={{color:'var(--sos-dark)'}} onClick={()=>{ onDelete(viewing.id); setViewing(null); }}>🗑 さくじょ</button>
+            </div>
+          </div>
+        ) : (
+          <div className="gallery-grid">
+            {gallery.slice().reverse().map(item => (
+              <button key={item.id} className="gallery-item" onClick={()=>setViewing(item)} aria-label="アートをみる">
+                <img src={item.dataUrl} alt="保存したアート" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   SOS MODAL
+   ============================================================ */
+function SosModal({ onClose }){
+  const [step, setStep] = useState(0); // 0 lang, 1 category, 2 question, 3 result
+  const [lang, setLang] = useState(null);
+  const [category, setCategory] = useState(null);
+  const [branch, setBranch] = useState(null); // 'yes' | 'no'
+
+  function t(dict){ return dict[lang || 'ja']; }
+
+  function reset(){ setStep(0); setLang(null); setCategory(null); setBranch(null); }
+
+  function chooseLang(code){ setLang(code); setStep(1); }
+  function chooseCategory(cat){ setCategory(cat); setStep(2); }
+  function answer(ans){
+    setBranch(ans === 'yes' ? 'yes' : 'no');
+    setStep(3);
+  }
+
+  const title = step===0 ? SOS_UI.title.ja : `${SOS_UI.title.ja}${lang && lang!=='ja' ? ' / ' + SOS_UI.title[lang] : ''}`;
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sos-title" onClick={(e)=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="modal-sheet">
+        <div className="modal-head">
+          <h2 id="sos-title" className="modal-title">🆘 {title}</h2>
+          <button className="icon-btn" aria-label="とじる" onClick={onClose}>✕</button>
+        </div>
+
+        {step > 0 && (
+          <button className="step-back" onClick={() => setStep(s => Math.max(0, s-1))}>
+            ← {SOS_UI.back.ja}{lang && lang!=='ja' ? ` / ${SOS_UI.back[lang]}` : ''}
+          </button>
+        )}
+
+        {step === 0 && (
+          <div>
+            <p style={{fontWeight:700, marginBottom:'0.8rem'}}>{SOS_UI.pickLang.ja}</p>
+            <div className="sos-lang-grid">
+              {LANGS.map(l => (
+                <button key={l.code} className="sos-lang-btn" onClick={()=>chooseLang(l.code)}>
+                  <span className="flag" aria-hidden="true">{l.flag}</span>
+                  <span className="lbl">{l.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div>
+            <p style={{fontWeight:700, marginBottom:'0.8rem'}}>
+              {SOS_UI.pickCat.ja}{lang!=='ja' && <><br/><span style={{fontWeight:500, color:'var(--ink-soft)', fontSize:'0.82rem'}}>{SOS_UI.pickCat[lang]}</span></>}
+            </p>
+            <div className="sos-cat-grid">
+              {SOS_CATEGORIES.map(cat => (
+                <button key={cat.id} className="sos-cat-btn" onClick={()=>chooseCategory(cat)}>
+                  <span className="em" aria-hidden="true">{cat.em}</span>
+                  <span className="lbl">{cat.label.ja}</span>
+                  {lang!=='ja' && <span className="lbl-sub">{cat.label[lang]}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 2 && category && (
+          <div>
+            <div className="sos-question-card">
+              <span className="em" aria-hidden="true">{category.em}</span>
+              <p>{category.question.ja}</p>
+              {lang!=='ja' && <p className="sub">{category.question[lang]}</p>}
+            </div>
+            <div className="sos-answer-row">
+              <button className="sos-answer-btn" onClick={()=>answer('yes')}>
+                {SOS_UI.yes.ja}{lang!=='ja' ? ` / ${SOS_UI.yes[lang]}` : ''}
+              </button>
+              <button className="sos-answer-btn" onClick={()=>answer('no')}>
+                {SOS_UI.no.ja}{lang!=='ja' ? ` / ${SOS_UI.no[lang]}` : ''}
+              </button>
+              <button className="sos-answer-btn" onClick={()=>answer('dunno')}>
+                {SOS_UI.dunno.ja}{lang!=='ja' ? ` / ${SOS_UI.dunno[lang]}` : ''}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && category && branch && (
+          <div>
+            <div className="sos-result-card">
+              <span className="badge">{category[branch].title.ja}</span>
+              <div className="phrase-main">{category[branch].phrase.ja}</div>
+              {lang!=='ja' && <div className="phrase-sub">{category[branch].phrase[lang]}</div>}
+              <div className="note">
+                {category[branch].note.ja}
+                {lang!=='ja' && <><br/><br/>{category[branch].note[lang]}</>}
+              </div>
+            </div>
+            <p style={{textAlign:'center', fontWeight:700, fontSize:'0.82rem', marginBottom:'1rem'}}>
+              📱 {SOS_UI.showScreen.ja}{lang!=='ja' ? ` / ${SOS_UI.showScreen[lang]}` : ''}
+            </p>
+
+            <div className="field-label">☎️ {SOS_UI.emergency.ja}{lang!=='ja' ? ` / ${SOS_UI.emergency[lang]}` : ''}</div>
+            <div className="emergency-row" style={{marginBottom:'1rem'}}>
+              <div className="emergency-chip">
+                <b>119</b>
+                <span>{SOS_UI.ambulance.ja}{lang!=='ja' ? ` / ${SOS_UI.ambulance[lang]}` : ''}</span>
+              </div>
+              <div className="emergency-chip">
+                <b>110</b>
+                <span>{SOS_UI.police.ja}{lang!=='ja' ? ` / ${SOS_UI.police[lang]}` : ''}</span>
+              </div>
+            </div>
+
+            <button className="btn btn-secondary" style={{width:'100%'}} onClick={reset}>
+              🔁 {SOS_UI.again.ja}{lang!=='ja' ? ` / ${SOS_UI.again[lang]}` : ''}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   FACE-UP TOAST
+   ============================================================ */
+function FaceUpToast({ show, onClose }){
+  return (
+    <div className={`faceup-toast ${show ? 'show':''}`} role="status" aria-live="polite">
+      <span aria-hidden="true" style={{fontSize:'1.3rem'}}>👀</span>
+      <p>周囲を確認しましょう（画面から目を離して安全確認）</p>
+      <button className="close-x" aria-label="とじる" onClick={onClose}>✕</button>
+    </div>
+  );
+}
+
+/* ============================================================
+   FOOTER (required, verbatim)
+   ============================================================ */
+function AppFooter(){
+  return (
+    <footer style={{textAlign:'center', fontSize:'0.75rem', color:'#888', marginTop:'3rem', padding:'1rem 0.5rem', lineHeight:1.5}}>
+      <p style={{marginBottom:'0.5rem'}}>【ご利用について】</p>
+      <p style={{marginBottom:'0.5rem'}}>本アプリは、使用される方の毎日を楽しく、快適にする目的で開発されたWEBアプリケーションです。</p>
+      <p style={{marginBottom:'0.5rem'}}>動作確認には万全を期しておりますが、端末環境やブラウザの仕様変更等に伴うデータ損失やトラブルについて開発者は一切の責任を負いかねます。</p>
+      <p>ご意見・不具合のご報告は X（<a href="https://x.com/lblt_labo" target="_blank" rel="noopener" style={{color:'#666', textDecoration:'underline'}}>@lblt_labo</a>）までお願いいたします。</p>
+    </footer>
+  );
+}
+
+/* ============================================================
+   MAIN APP
+   ============================================================ */
+function App(){
+  const [profiles] = useState(DEFAULT_PROFILES);
+  const [profile, setProfile] = useState(() => safeStorage.get('katairo_current_profile', DEFAULT_PROFILES[0]));
+  const [tone, setTone] = useState(() => safeStorage.get('katairo_settings_tone', 'fuwafuwa'));
+  const [timerMin, setTimerMin] = useState(() => safeStorage.get('katairo_settings_timer', 2));
+
+  const [counts, setCounts] = useState(() => safeStorage.get(keyProfileCounts(profile), emptyCounts()));
+  const [gallery, setGallery] = useState(() => safeStorage.get(keyProfileGallery(profile), []));
+
+  const [showManner, setShowManner] = useState(() => !safeStorage.get('katairo_manner_seen', false));
+  const [showSettings, setShowSettings] = useState(false);
+  const [showArt, setShowArt] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [showSos, setShowSos] = useState(false);
+
+  const [pulseId, setPulseId] = useState(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastTimeoutRef = useRef(null);
+
+  // load per-profile data when profile changes
+  useEffect(() => {
+    setCounts(safeStorage.get(keyProfileCounts(profile), emptyCounts()));
+    setGallery(safeStorage.get(keyProfileGallery(profile), []));
+    safeStorage.set('katairo_current_profile', profile);
+  }, [profile]);
+
+  useEffect(() => { safeStorage.set(keyProfileCounts(profile), counts); }, [counts, profile]);
+  useEffect(() => { safeStorage.set(keyProfileGallery(profile), gallery); }, [gallery, profile]);
+  useEffect(() => { safeStorage.set('katairo_settings_tone', tone); }, [tone]);
+  useEffect(() => { safeStorage.set('katairo_settings_timer', timerMin); }, [timerMin]);
+
+  // face-up timer
+  useEffect(() => {
+    const intervalMs = Math.max(1, timerMin) * 60 * 1000;
+    const id = setInterval(() => {
+      setToastVisible(true);
+      if(toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = setTimeout(() => setToastVisible(false), 6000);
+    }, intervalMs);
+    return () => { clearInterval(id); if(toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current); };
+  }, [timerMin]);
+
+  function handleMannerAgree(){
+    safeStorage.set('katairo_manner_seen', true);
+    setShowManner(false);
+  }
+
+  function handleTap(shapeId){
+    setCounts(c => ({ ...c, [shapeId]: (c[shapeId]||0) + 1 }));
+    setPulseId(shapeId);
+    setTimeout(() => setPulseId(p => p===shapeId ? null : p), 450);
+  }
+
+  function handleSaveArt(dataUrl){
+    setGallery(g => {
+      const next = [...g, { id: `${Date.now()}`, dataUrl, createdAt: Date.now() }];
+      return next.slice(-24); // keep it bounded for storage size
+    });
+  }
+
+  function handleDeleteArt(id){
+    setGallery(g => g.filter(item => item.id !== id));
+  }
+
+  const total = SHAPES.reduce((s,sh) => s + (counts[sh.id]||0), 0);
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="brand-row">
+          <div className="brand">
+            <div className="brand-badge" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 100 100"><circle cx="35" cy="35" r="22" fill="#fff"/><polygon points="75,18 92,55 58,55" fill="#F2B33D"/></svg>
+            </div>
+            <div style={{minWidth:0}}>
+              <div className="brand-title">形いろあつめ</div>
+              <div className="brand-sub">街なかSOSつき</div>
+            </div>
+          </div>
+          <div style={{display:'flex', gap:'0.4rem', alignItems:'center', flexShrink:0}}>
+            <button className="icon-btn" aria-label="せってい" onClick={()=>setShowSettings(true)}>⚙️</button>
+            <button className="sos-btn" onClick={()=>setShowSos(true)}>
+              <span aria-hidden="true">🆘</span> SOS
+            </button>
+          </div>
+        </div>
+
+        <div className="profile-row" role="radiogroup" aria-label="プロフィールをえらぶ">
+          {profiles.map(p => (
+            <button
+              key={p}
+              className={`profile-pill ${profile===p ? 'active':''}`}
+              role="radio"
+              aria-checked={profile===p}
+              onClick={()=>setProfile(p)}
+            >
+              {profile===p && <span className="check" aria-hidden="true">●</span>}
+              {p}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="safety-strip">
+        <span>📷カメラ・📍位置情報は 使用しません。あんぜんに あそぼうね！</span>
+        <button onClick={()=>setShowSettings(true)}>せってい</button>
+      </div>
+
+      <main>
+        <div className="greet">
+          <div className="greet-name">{profile}さんの けいすう</div>
+          <div className="greet-tone">ひょうじ：{TONE_MODES.find(t=>t.id===tone)?.label} ／ かおあげタイマー：{timerMin}分ごと</div>
+        </div>
+
+        <div className="shape-grid">
+          {SHAPES.map(shape => (
+            <div
+              key={shape.id}
+              className={`shape-tile ${pulseId===shape.id ? 'pulse':''}`}
+              style={{ borderColor: pulseId===shape.id ? shape.color : undefined }}
+              onClick={()=>handleTap(shape.id)}
+              role="button"
+              tabIndex={0}
+              aria-label={`${SHAPE_ARIA[shape.id]}を かぞえる。いま ${counts[shape.id]||0}こ`}
+              onKeyDown={(e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); handleTap(shape.id); } }}
+            >
+              <div className={`ring-burst ${pulseId===shape.id ? 'show':''}`} style={{borderColor: shape.color}}></div>
+              <span className="count-chip" style={{background: shape.color}}>{counts[shape.id]||0}</span>
+              <div className="icon-wrap"><ShapeIcon id={shape.id} color={shape.color} /></div>
+              {tone !== 'sukkiri' && <div className="shape-label">{shape.labels[tone]}</div>}
+              {tone === 'sukkiri' && <span className="sr-only">{SHAPE_ARIA[shape.id]}</span>}
+            </div>
+          ))}
+        </div>
+
+        <div className="stats-card">
+          <div className="stats-total"><b>{total}</b><span>こ あつめたよ</span></div>
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={()=>setShowArt(true)}>🎨 アートを作る</button>
+            <button className="btn btn-secondary" onClick={()=>setShowGallery(true)}>📚 コレクション</button>
+          </div>
+        </div>
+      </main>
+
+      <AppFooter />
+
+      <FaceUpToast show={toastVisible} onClose={()=>setToastVisible(false)} />
+
+      {showManner && <MannerDialog onAgree={handleMannerAgree} />}
+      {showSettings && (
+        <SettingsSheet
+          tone={tone} setTone={setTone}
+          timerMin={timerMin} setTimerMin={setTimerMin}
+          onClose={()=>setShowSettings(false)}
+        />
+      )}
+      {showArt && (
+        <ArtModal
+          counts={counts}
+          profile={profile}
+          onClose={()=>setShowArt(false)}
+          onSaveToGallery={handleSaveArt}
+        />
+      )}
+      {showGallery && (
+        <GalleryModal
+          gallery={gallery}
+          profile={profile}
+          onClose={()=>setShowGallery(false)}
+          onDelete={handleDeleteArt}
+        />
+      )}
+      {showSos && <SosModal onClose={()=>setShowSos(false)} />}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./sw.js').catch(function(){ /* ignore in sandboxed preview */ });
+    });
+  }
+</script>
+</body>
+</html>

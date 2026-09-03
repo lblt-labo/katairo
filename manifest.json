@@ -1,0 +1,26 @@
+{
+  "name": "街歩き知育・形あつめ & 街なかSOS",
+  "short_name": "形いろあつめ",
+  "description": "街歩きや電車の中で形をさがす知育アプリ。多言語の街なかSOS機能つき。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F5F6F2",
+  "theme_color": "#1C7C8C",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
