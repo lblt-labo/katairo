@@ -1567,11 +1567,13 @@ function InstallBanner(){
    ============================================================ */
 function AppFooter(){
   return (
-    <footer style={{textAlign:'center', fontSize:'0.75rem', color:'#888', marginTop:'3rem', padding:'1rem 0.5rem', lineHeight:1.5}}>
+    <footer style={{textAlign:'center', fontSize:'0.75rem', color:'#888', marginTop:'3rem', padding:'1rem 0.5rem', lineHeight:'1.5'}}>
       <p style={{marginBottom:'0.5rem'}}>【ご利用について】</p>
-      <p style={{marginBottom:'0.5rem'}}>本アプリは、使用される方の毎日を楽しく、快適にする目的で開発されたWEBアプリケーションです。</p>
-      <p style={{marginBottom:'0.5rem'}}>動作確認には万全を期しておりますが、端末環境やブラウザの仕様変更等に伴うデータ損失やトラブルについて開発者は一切の責任を負いかねます。</p>
-      <p>ご意見・不具合のご報告は X（<a href="https://x.com/lblt_labo" target="_blank" rel="noopener" style={{color:'#666', textDecoration:'underline'}}>@lblt_labo</a>）までお願いいたします。</p>
+      <p style={{marginBottom:'0.5rem'}}>本アプリの利用に伴うトラブルやデータ損失等について、開発者は一切の責任を負いかねます。</p>
+      <p>ご意見・不具合のご報告は X (<a href="https://x.com/lblt_labo" target="_blank" rel="noopener" style={{color:'#666', textDecoration:'underline'}}>@lblt_labo</a>) までお願いいたします。</p>
+      <p style={{marginTop:'0.75rem'}}>
+        <a href="https://ofuse.me/lbltlabo/letter" target="_blank" rel="noopener noreferrer" style={{color:'#666', textDecoration:'underline'}}>☕️ 開発者を応援する / メッセージを送る</a>
+      </p>
     </footer>
   );
 }
