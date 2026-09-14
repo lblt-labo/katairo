@@ -259,9 +259,6 @@
   .btn-row{ display:flex; gap:0.6rem; }
   .btn-row .btn{ flex:1; }
 
-  /* ---- footer ---- */
-  footer{ margin-top: auto; }
-
   /* ---- toast ---- */
   .faceup-toast{
     position: fixed; top: 0.7rem; left:50%; transform: translateX(-50%) translateY(-140%);
@@ -1559,20 +1556,6 @@ function InstallBanner(){
       {showAndroid && <button className="btn btn-primary install-btn" onClick={handleInstall}>インストール</button>}
       <button className="icon-btn install-close" aria-label="とじる" onClick={dismiss}>✕</button>
     </div>
-  );
-}
-
-/* ============================================================
-   FOOTER (required, verbatim)
-   ============================================================ */
-function AppFooter(){
-  return (
-    <footer style={{textAlign:'center', fontSize:'0.75rem', color:'#888', marginTop:'3rem', padding:'1rem 0.5rem', lineHeight:1.5}}>
-      <p style={{marginBottom:'0.5rem'}}>【ご利用について】</p>
-      <p style={{marginBottom:'0.5rem'}}>本アプリは、使用される方の毎日を楽しく、快適にする目的で開発されたWEBアプリケーションです。</p>
-      <p style={{marginBottom:'0.5rem'}}>動作確認には万全を期しておりますが、端末環境やブラウザの仕様変更等に伴うデータ損失やトラブルについて開発者は一切の責任を負いかねます。</p>
-      <p>ご意見・不具合のご報告は X（<a href="https://x.com/lblt_labo" target="_blank" rel="noopener" style={{color:'#666', textDecoration:'underline'}}>@lblt_labo</a>）までお願いいたします。</p>
-    </footer>
   );
 }
 
